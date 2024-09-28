@@ -170,14 +170,14 @@ class QH2OKVCache:
         v_hh_recent = past_key_values[1].squeeze()[mask].view(bsz, num_heads, -1, head_dim)
 
         self.hh_score= self.hh_score[mask].view(num_heads, self.cache_size)
-        self.q_score= self.q_score[mask].view(num_heads, self.cache_size)
+        # self.q_score= self.q_score[mask].view(num_heads, self.cache_size)
 
         return (k_hh_recent, v_hh_recent)
 
     def _update_hh_score(self, attn_score_cache):
         num_new_tokens = attn_score_cache.shape[2]
 
-        if self.hh_score is None:
+        if self.hh_score is None or num_new_tokens != 1:
             # set-up cache size
             self.hh_size = int(self.hh_size_ratio * num_new_tokens)
             self.recent_size = int(self.recent_size_ratio * num_new_tokens)
@@ -208,7 +208,7 @@ class QH2OKVCache:
 
     def _update_combination_score(self):
         min_hh, max_hh = self.hh_score.min(), self.hh_score.max()
-        self.combination_score = self.lambda_hh * (self.hh_score - min_hh) / (max_hh - min_hh) + (1 - self.lambda_hh) * self.q_score
+        self.combination_score = self.lambda_hh * (self.hh_score - min_hh) / (max_hh - min_hh)
 
     def _clean_scores(self):
         self.hh_score = None
